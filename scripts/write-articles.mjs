@@ -36,8 +36,9 @@ Standards (these are not optional):
 - Every factual claim (names, numbers, dates, quotes) must come from sources you actually retrieved with web search in this session. Never invent quotes, figures, people or events. Quote exactly. Say so when something is unconfirmed.
 - Near the end of each article, include one paragraph that fairly states the strongest opposing view or criticism.
 - Criticize policies, officials and institutions. Never demean people for ethnicity, nationality, religion or immigrant status. No slurs, no dehumanizing language, no conspiracy claims.
-- Write original prose. Don't copy sentences from sources.
-- No disclaimers in the body; the site labels every article as AI-written.`;
+- Write entirely original prose. Paraphrase everything; never reuse a source's sentences or long phrases. The only exception is a direct quote from a named person or document, in quotation marks and attributed ("…," Bessent said). Never present an outlet's own reporting sentences as a quote.
+- Cite news outlets, wire services and primary documents. Don't cite Wikipedia.
+- No disclaimers or notes about how the article was produced in the body.`;
 
 const recent = existing.slice(0, 40).map(a => `- ${a.title} (${a.publishedAt})`).join("\n");
 
@@ -99,13 +100,34 @@ for (let i = 0; i < 6; i++) {
 
 // URLs Claude actually retrieved — used to reject any source it didn't find.
 const seenUrls = new Set();
+const sourceSnippets = [];
 for (const b of allBlocks) {
   if (b.type === "web_search_tool_result" && Array.isArray(b.content)) {
     for (const r of b.content) if (r.url) seenUrls.add(normUrl(r.url));
   }
   if (b.type === "text" && Array.isArray(b.citations)) {
-    for (const c of b.citations) if (c.url) seenUrls.add(normUrl(c.url));
+    for (const c of b.citations) {
+      if (c.url) seenUrls.add(normUrl(c.url));
+      if (c.cited_text) sourceSnippets.push(c.cited_text);
+    }
   }
+}
+
+// Copy check: flag any 10-word run outside quotation marks that matches a source excerpt.
+function words(s) { return String(s).toLowerCase().replace(/[^a-z0-9' ]+/g, " ").split(/\s+/).filter(Boolean); }
+const RUN = 10;
+const sourceRuns = new Set();
+for (const s of sourceSnippets) { const w = words(s); for (let i = 0; i + RUN <= w.length; i++) sourceRuns.add(w.slice(i, i + RUN).join(" ")); }
+function copiedRuns(paragraphs) {
+  let hits = 0;
+  for (const p of paragraphs) {
+    const unquoted = String(p).replace(/["“][^"”]*["”]/g, " | ");
+    for (const seg of unquoted.split("|")) {
+      const w = words(seg);
+      for (let i = 0; i + RUN <= w.length; i++) if (sourceRuns.has(w.slice(i, i + RUN).join(" "))) { hits++; i += RUN - 1; }
+    }
+  }
+  return hits;
 }
 
 function normUrl(u) {
@@ -134,8 +156,9 @@ for (const d of Array.isArray(drafts) ? drafts : []) {
   if (!d.title || !d.dek) problems.push("missing title or dek");
   if (!SECTIONS.includes(d.section)) problems.push(`bad section "${d.section}"`);
   if (!Array.isArray(d.body) || d.body.length < 3) problems.push("body too short");
-  const sources = (d.sources || []).filter(s => s && /^https?:\/\//.test(s.url) && seenUrls.has(normUrl(s.url)));
+  const sources = (d.sources || []).filter(s => s && /^https?:\/\//.test(s.url) && seenUrls.has(normUrl(s.url)) && !/wikipedia\.org/i.test(s.url));
   if (!sources.length) problems.push("no sources that match pages actually searched");
+  if (Array.isArray(d.body) && copiedRuns(d.body) > 0) problems.push("copies source wording outside quotation marks");
   if (problems.length) { console.warn(`Skipped "${d.title}": ${problems.join("; ")}`); continue; }
 
   let id = `${String(d.slug || d.title).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60)}-${mmdd}`;
