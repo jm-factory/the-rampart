@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The Rampart · News from the home front</title>
-<meta name="description" content="Breaking news and analysis from an America First point of view. Written by AI from public reporting, with every source linked.">
+<meta name="description" content="Breaking news and analysis from an America First point of view, with every source linked.">
 <meta property="og:title" content="The Rampart">
-<meta property="og:description" content="Breaking news and analysis from an America First point of view. AI-written, every source linked.">
+<meta property="og:description" content="Breaking news and analysis from an America First point of view, with every source linked.">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#060913">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23FF5A70'/%3E%3Cstop offset='.55' stop-color='%23C4122F'/%3E%3Cstop offset='1' stop-color='%233A55D8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3Cpath fill='%23fff' d='M7 25V11h4v3h3v-3h4v3h3v-3h4v14z'/%3E%3C/svg%3E">
@@ -69,8 +69,6 @@ nav button[aria-pressed="true"]{color:#fff;background:linear-gradient(180deg,rgb
 .meta{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
 .kicker{color:var(--ink);padding:3px 8px;border-radius:6px;background:var(--glass-2);border:1px solid var(--line)}
 .kicker.analysis{color:#C9D6FF;border-color:rgba(79,123,255,.45);background:rgba(79,123,255,.14)}
-.ai{color:var(--ink-2);display:inline-flex;align-items:center;gap:5px}
-.ai::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--blue);box-shadow:0 0 8px var(--blue)}
 
 main{padding-block:26px 70px}
 .card-link{text-decoration:none;display:block;height:100%}
@@ -135,7 +133,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 <main><div class="wrap" id="view"><div class="state">Loading the wire…</div></div></main>
 
 <footer><div class="wrap">
-  <span>The Rampart · Written by AI from public reporting. Every story links its sources.</span>
+  <span>The Rampart · News from the home front. Every story links its sources.</span>
   <span>Analysis pieces are labeled.</span>
 </div></footer>
 </div>
@@ -151,7 +149,7 @@ function renderNav(){
   $("#navs").innerHTML=SECTIONS.map(s=>`<button type="button" data-s="${s}" aria-pressed="${s===section}">${s}</button>`).join("");
   $("#navs").querySelectorAll("button").forEach(b=>b.onclick=()=>{section=b.dataset.s;if(location.hash&&location.hash!=="#home")location.hash="home";else render()});
 }
-const meta=a=>`<div class="meta"><span class="kicker${a.type==="analysis"?" analysis":""}">${esc(a.type==="analysis"?"Analysis · "+a.section:a.section)}</span><span>${esc(fmt(a.publishedAt))}</span><span class="ai">AI-written</span></div>`;
+const meta=a=>`<div class="meta"><span class="kicker${a.type==="analysis"?" analysis":""}">${esc(a.type==="analysis"?"Analysis · "+a.section:a.section)}</span><span>${esc(fmt(a.publishedAt))}</span></div>`;
 const link=(a,inner)=>`<a class="card-link" href="#${esc(a.id)}">${inner}</a>`;
 
 function renderFront(){
@@ -174,9 +172,8 @@ function renderArticle(a){
     ${meta(a)}
     <h1>${esc(a.title)}</h1>
     <p class="dek">${esc(a.dek)}</p>
-    <div class="byline meta"><span>By The Rampart Wire (AI)</span><span>${esc(fmt(a.publishedAt))}</span></div>
+    <div class="byline meta"><span>By The Rampart Wire</span><span>${esc(fmt(a.publishedAt))}</span></div>
     <div class="body">${paras}</div>
-    <div class="glass note">This ${a.type==="analysis"?"analysis":"report"} was written by AI from the public sources below. The facts come from those sources, and the framing and opinion are The Rampart's. Breaking stories can change, so check the originals.</div>
     ${src?`<div class="glass sources"><h3 class="label">Sources</h3><ol>${src}</ol></div>`:""}
   </article>`;
   $("#back").onclick=()=>{location.hash="home"};
