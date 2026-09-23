@@ -196,8 +196,8 @@ for (const d of Array.isArray(drafts) ? drafts : []) {
 
 // ---------- Images (Wikimedia Commons, free licenses only) ----------
 const UA = `TheRampartWire/1.0 (https://github.com/${process.env.GITHUB_REPOSITORY || "the-rampart"})`;
-const OK_LICENSE = /^(cc0|public domain|pd\b|pd-|cc[ -]by(-sa)?[ -]?\d)/i;
-const BAD_TITLE = /logo|map|flag|seal|coat[ _]of[ _]arms|diagram|chart|signature|icon|emblem|screenshot|\.svg|\.gif|\.tif/i;
+const OK_LICENSE = /^(cc0|public domain|pd\b|pd-|no restrictions)/i;
+const BAD_TITLE = /logo|map|flag|seal|coat[ _]of[ _]arms|diagram|chart|graph|figure|process|infographic|signature|icon|emblem|screenshot|impersonat|parody|cartoon|caricature|meme|lookalike|cosplay|\.svg|\.gif|\.tif/i;
 const stripHtml = h => String(h || "").replace(/<[^>]*>/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#0?39;/g, "'").replace(/&[a-z]+;/g, " ").replace(/\s+/g, " ").trim();
 
 async function searchCommons(q) {
@@ -206,7 +206,7 @@ async function searchCommons(q) {
     action: "query", format: "json", formatversion: "2", origin: "*",
     generator: "search", gsrsearch: `${q} filetype:bitmap`, gsrnamespace: "6", gsrlimit: "15",
     prop: "imageinfo", iiprop: "url|size|mime|extmetadata", iiurlwidth: "1280",
-    iiextmetadatafilter: "LicenseShortName|Artist|LicenseUrl",
+    iiextmetadatafilter: "LicenseShortName|Artist|LicenseUrl|ImageDescription",
   }).forEach(([k, v]) => u.searchParams.set(k, v));
   const r = await fetch(u, { headers: { "User-Agent": UA } });
   if (!r.ok) throw new Error(`Commons ${r.status}`);
@@ -214,7 +214,8 @@ async function searchCommons(q) {
   return (j.query?.pages || []).sort((a, b) => (a.index ?? 99) - (b.index ?? 99));
 }
 
-function pickImage(pages) {
+function candidates(pages) {
+  const out = [];
   for (const p of pages) {
     const ii = p.imageinfo?.[0]; if (!ii) continue;
     const md = ii.extmetadata || {};
@@ -224,8 +225,9 @@ function pickImage(pages) {
     if (ii.width < 900 || ratio < 1.15 || ratio > 2.3) continue;
     if (!OK_LICENSE.test(license) || BAD_TITLE.test(p.title)) continue;
     let credit = stripHtml(md.Artist?.value);
+    if (/unknown author|^unknown$/i.test(credit)) credit = "";
     if (credit.length > 80) credit = credit.slice(0, 77) + "…";
-    return {
+    out.push({
       src: ii.thumburl || ii.url,
       width: ii.thumbwidth || ii.width,
       height: ii.thumbheight || ii.height,
@@ -233,17 +235,41 @@ function pickImage(pages) {
       credit: credit || "Wikimedia Commons",
       license,
       page: ii.descriptionurl,
-    };
+      _desc: stripHtml(md.ImageDescription?.value).slice(0, 220),
+    });
   }
+  return out;
+}
+
+// Ask Claude which candidate (if any) actually fits the story.
+async function chooseImage(article, cands) {
+  if (!cands.length) return null;
+  const list = cands.map((c, i) => `${i}. ${c.alt} — ${c._desc || "(no description)"}`).join("\n");
+  const prompt = `News article: "${article.title}" — ${article.dek}
+
+Candidate public-domain photos (file title — description):
+${list}
+
+Pick the ONE photo that directly shows the story's main subject: the specific named person, place, building or institution the story is about. Reject any photo whose main subject is a different named person, an impersonator or lookalike, a diagram, a document, or anything that would mislead a reader about what happened. Generic but accurate scenes (e.g. the U.S. Capitol for a Congress story) are fine. If none qualify, answer -1.
+Answer with only the number.`;
+  try {
+    const r = await callClaude([{ role: "user", content: prompt }], { tools: [], system: "You answer with a single integer.", max_tokens: 10 });
+    const n = parseInt(r.content.filter(b => b.type === "text").map(b => b.text).join("").trim(), 10);
+    if (Number.isInteger(n) && n >= 0 && n < cands.length) { const { _desc, ...img } = cands[n]; return img; }
+  } catch (e) { console.warn("Image choice failed:", e.message); }
   return null;
 }
 
-async function findImage(queries) {
-  for (const q of queries) {
-    try { const img = pickImage(await searchCommons(q)); if (img) return img; }
-    catch (e) { console.warn(`Image search failed for "${q}": ${e.message}`); }
+async function findImage(queries, article) {
+  const seen = new Set(), pool = [];
+  for (const q of queries.slice(0, 3)) {
+    try {
+      for (const c of candidates(await searchCommons(q))) {
+        if (!seen.has(c.src) && pool.length < 12) { seen.add(c.src); pool.push(c); }
+      }
+    } catch (e) { console.warn(`Image search failed for "${q}": ${e.message}`); }
   }
-  return null;
+  return chooseImage(article, pool);
 }
 
 async function queriesFor(list) {
@@ -260,22 +286,25 @@ ${list.map(a => `${a.id}: ${a.title} — ${a.dek}`).join("\n")}`;
 // New articles
 for (const a of accepted) {
   const q = a._imageQueries.length ? a._imageQueries : [a.title];
-  const img = await findImage(q);
+  const img = await findImage(q, a);
   if (img) a.image = img;
   a.imageTried = true;
+  a.imageV = 2;
   delete a._imageQueries;
 }
 
 // Backfill up to 10 older articles that never got an image
-const needImg = existing.filter(a => !a.image && !a.imageTried).slice(0, 10);
+// Re-check older articles picked before the relevance check (imageV < 2).
+const needImg = existing.filter(a => a.imageV !== 2).slice(0, 12);
 let backfilled = 0;
 if (needImg.length) {
   let qmap = {};
   try { qmap = await queriesFor(needImg); } catch (e) { console.warn("Couldn't get image queries:", e.message); }
   for (const a of needImg) {
-    const img = await findImage(Array.isArray(qmap[a.id]) && qmap[a.id].length ? qmap[a.id] : [a.title]);
-    if (img) { a.image = img; backfilled++; }
+    const img = await findImage(Array.isArray(qmap[a.id]) && qmap[a.id].length ? qmap[a.id] : [a.title], a);
+    if (img) { a.image = img; backfilled++; } else delete a.image;
     a.imageTried = true;
+    a.imageV = 2;
   }
 }
 

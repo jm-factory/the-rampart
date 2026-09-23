@@ -119,7 +119,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 /* images */
 .media{position:relative;overflow:hidden;background:#0d1426;aspect-ratio:16/9;max-width:100%}
 .media img,.media svg.cover{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s ease}
-.card-link:hover .media svg.cover{transform:scale(1.03)}
+.card-link:hover .media svg.cover,.card-link:hover .media img{transform:scale(1.03)}
 .ph{width:100%;height:100%;display:grid;place-items:center;background:
   radial-gradient(60% 80% at 20% 20%,rgba(255,51,80,.35),transparent 70%),
   radial-gradient(60% 80% at 85% 90%,rgba(79,123,255,.35),transparent 70%),#0d1426}
@@ -232,7 +232,10 @@ function cover(a,{kw=true,thumb=false}={}){
   <rect x="0" y="0" width="800" height="3" fill="#FF3350" opacity=".8"/>
 </svg>`;
 }
-const media=a=>`<div class="media">${cover(a)}</div>`;
+const photo=a=>a.image&&a.image.src&&!/^data:/.test(a.image.src);
+const media=a=>photo(a)
+  ?`<div class="media"><img src="${esc(a.image.src)}" alt="${esc(a.image.alt||"")}" loading="lazy" decoding="async" onerror="this.outerHTML=this.parentNode.dataset.fb" ></div>`.replace('<div class="media">',`<div class="media" data-fb="${esc(cover(a))}">`)
+  :`<div class="media">${cover(a)}</div>`;
 
 function renderFront(){
   document.title="The Rampart · News from the home front";
@@ -243,12 +246,17 @@ function renderFront(){
   $("#view").innerHTML=`
   <div class="hero">
     ${link(lead,`<div class="glass lead${leadImg?" has-img":""}">${leadImg?media(lead):""}<div class="txt">${meta(lead)}<h2>${esc(lead.title)}</h2><p>${esc(lead.dek)}</p></div></div>`)}
-    <div class="stack"><h3 class="label">Latest</h3>${side.map(a=>link(a,`<div class="glass row"><div class="thumb"><div class="media">${cover(a,{thumb:true})}</div></div><div class="t">${meta(a)}<h4>${esc(a.title)}</h4></div></div>`)).join("")||`<p class="meta">More stories on the next run.</p>`}</div>
+    <div class="stack"><h3 class="label">Latest</h3>${side.map(a=>link(a,`<div class="glass row"><div class="thumb">${photo(a)?media(a):`<div class="media">${cover(a,{thumb:true})}</div>`}</div><div class="t">${meta(a)}<h4>${esc(a.title)}</h4></div></div>`)).join("")||`<p class="meta">More stories on the next run.</p>`}</div>
   </div>
   ${more.length?`<section class="more"><h3 class="label">More from the wire</h3><div class="grid">${more.map(a=>link(a,`<div class="glass">${media(a)}<div class="t">${meta(a)}<h4>${esc(a.title)}</h4><p>${esc(a.dek)}</p></div></div>`)).join("")}</div></section>`:""}`;
 }
 function figure(a){
-  return `<figure class="hero-img"><div class="media">${cover(a)}</div></figure>`;
+  if(!photo(a))return `<figure class="hero-img"><div class="media">${cover(a)}</div></figure>`;
+  const im=a.image;
+  const who=/unknown author/i.test(im.credit||"")?"Wikimedia Commons":im.credit;
+  const credit=[who&&("Photo: "+who),im.license].filter(Boolean).join(" · ");
+  const cap=credit?(im.page?`<a href="${esc(im.page)}" target="_blank" rel="noopener">${esc(credit)}</a>`:esc(credit)):"";
+  return `<figure class="hero-img">${media(a)}${cap?`<figcaption>${cap}</figcaption>`:""}</figure>`;
 }
 function renderArticle(a){
   const paras=(Array.isArray(a.body)?a.body:String(a.body||"").split(/\n\n+/)).map(p=>`<p>${esc(p)}</p>`).join("");
