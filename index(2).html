@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Rampart · News from the home front</title>
+<meta name="description" content="Breaking news and analysis from an America First point of view, with every source linked.">
+<meta property="og:title" content="The Rampart">
+<meta property="og:description" content="Breaking news and analysis from an America First point of view, with every source linked.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#060913">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23FF5A70'/%3E%3Cstop offset='.55' stop-color='%23C4122F'/%3E%3Cstop offset='1' stop-color='%233A55D8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3Cpath fill='%23fff' d='M7 25V11h4v3h3v-3h4v3h3v-3h4v14z'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..900&family=Figtree:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Deliberately dark-only: the glow reads on a night ground. */
+:root{
+  color-scheme:dark;
+  --bg:#060913; --bg-2:#0B1122;
+  --glass:rgba(255,255,255,.045); --glass-2:rgba(255,255,255,.08);
+  --line:rgba(255,255,255,.10); --line-hi:rgba(255,255,255,.22);
+  --ink:#EEF1F8; --ink-2:#AAB3C7; --muted:#7A849B;
+  --red:#FF3350; --red-soft:rgba(255,51,80,.35);
+  --blue:#4F7BFF; --blue-soft:rgba(79,123,255,.30);
+  --display:"Archivo","Arial Black","Helvetica Neue",sans-serif;
+  --sans:"Figtree","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.6;min-height:100%;position:relative;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:-20vh -10vw auto -10vw;height:80vh;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(40% 55% at 18% 20%, var(--red-soft), transparent 70%),
+    radial-gradient(45% 60% at 85% 10%, var(--blue-soft), transparent 70%);
+  filter:blur(20px);opacity:.9}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.35;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:64px 64px;mask-image:radial-gradient(70% 50% at 50% 0%,#000 0%,transparent 80%);-webkit-mask-image:radial-gradient(70% 50% at 50% 0%,#000 0%,transparent 80%)}
+.page{position:relative;z-index:1}
+a{color:inherit}
+a:focus-visible,button:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:6px}
+.wrap{max-width:1160px;margin:0 auto;padding-inline:20px}
+
+/* header */
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);background:rgba(6,9,19,.62);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;gap:20px;padding-block:14px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;font-family:var(--display);font-weight:900;font-stretch:125%;font-size:22px;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap}
+.mark{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;
+  background:linear-gradient(145deg,#FF5A70,#C4122F 55%,#3A55D8);box-shadow:0 0 22px var(--red-soft),inset 0 1px 0 rgba(255,255,255,.45)}
+.mark svg{width:16px;height:16px}
+nav{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-left:auto;padding:4px;border-radius:999px;background:var(--glass);border:1px solid var(--line)}
+nav::-webkit-scrollbar{display:none}
+nav button{all:unset;cursor:pointer;font-size:13px;font-weight:600;color:var(--ink-2);padding:7px 14px;border-radius:999px;white-space:nowrap;transition:color .2s,background .2s}
+nav button:hover{color:var(--ink)}
+nav button[aria-pressed="true"]{color:#fff;background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.06));box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 0 18px var(--blue-soft)}
+
+/* breaking */
+.breaking{margin-top:22px}
+.breaking a{display:flex;align-items:center;gap:14px;text-decoration:none;padding:10px 16px 10px 10px;border-radius:14px;border:1px solid rgba(255,51,80,.45);
+  background:linear-gradient(90deg,rgba(255,51,80,.18),rgba(255,51,80,.04));box-shadow:0 0 30px rgba(255,51,80,.15);min-width:0}
+.pill{flex:none;font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#fff;background:var(--red);padding:5px 10px;border-radius:8px;box-shadow:0 0 16px var(--red-soft);display:flex;align-items:center;gap:7px}
+.pill i{width:7px;height:7px;border-radius:50%;background:#fff;animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.breaking span.t{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+
+/* meta */
+.meta{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.kicker{color:var(--ink);padding:3px 8px;border-radius:6px;background:var(--glass-2);border:1px solid var(--line)}
+.kicker.analysis{color:#C9D6FF;border-color:rgba(79,123,255,.45);background:rgba(79,123,255,.14)}
+
+main{padding-block:26px 70px}
+.card-link{text-decoration:none;display:block;height:100%}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1.55fr 1fr;gap:20px}
+.glass{background:linear-gradient(180deg,var(--glass-2),var(--glass));border:1px solid var(--line);border-radius:22px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 20px 50px rgba(0,0,0,.35);transition:border-color .25s,box-shadow .25s,transform .25s}
+.card-link:hover .glass,.card-link:focus-visible .glass{border-color:var(--line-hi);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 0 0 1px rgba(79,123,255,.25),0 24px 60px rgba(0,0,0,.45),0 0 40px rgba(79,123,255,.18)}
+.lead{position:relative;overflow:hidden;padding:clamp(22px,4vw,40px);min-height:100%;display:flex;flex-direction:column;justify-content:flex-end;gap:14px}
+.lead::before{content:"";position:absolute;inset:-40% -20% auto auto;width:70%;aspect-ratio:1;border-radius:50%;background:radial-gradient(closest-side,var(--red-soft),transparent);pointer-events:none}
+.lead h2{position:relative;font-family:var(--display);font-weight:800;font-stretch:112%;font-size:clamp(30px,4.4vw,52px);line-height:1.02;letter-spacing:-.015em;margin:0;text-wrap:balance;
+  background:linear-gradient(180deg,#fff 30%,#B9C3DA);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead p{position:relative;margin:0;font-size:19px;color:var(--ink-2);max-width:58ch}
+.lead .meta{position:relative}
+.stack{display:flex;flex-direction:column;gap:12px}
+.stack .glass{padding:16px 18px;border-radius:16px;display:flex;flex-direction:column;gap:8px}
+.stack h4{margin:0;font-size:17px;font-weight:600;line-height:1.3;text-wrap:balance}
+.label{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);margin:0 0 4px;display:flex;align-items:center;gap:10px}
+.label::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line-hi),transparent)}
+.more{margin-top:40px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px;margin-top:14px}
+.grid .glass{padding:20px;border-radius:18px;display:flex;flex-direction:column;gap:10px}
+.grid h4{margin:0;font-size:19px;font-weight:600;line-height:1.28;text-wrap:balance}
+.grid p{margin:0;color:var(--ink-2);font-size:15px}
+
+/* article */
+article{max-width:720px;margin:0 auto}
+.back{all:unset;cursor:pointer;font-size:14px;font-weight:600;color:var(--ink-2);padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--glass);margin-bottom:26px;display:inline-block}
+.back:hover{color:var(--ink);border-color:var(--line-hi)}
+article h1{font-family:var(--display);font-weight:800;font-stretch:112%;font-size:clamp(32px,5.4vw,56px);line-height:1.03;letter-spacing:-.015em;margin:16px 0;text-wrap:balance;
+  background:linear-gradient(180deg,#fff 30%,#B9C3DA);-webkit-background-clip:text;background-clip:text;color:transparent}
+article .dek{font-size:21px;color:var(--ink-2);margin:0 0 22px;line-height:1.45}
+.byline{padding-block:12px;margin-bottom:28px;border-block:1px solid var(--line)}
+.body{font-size:18px;line-height:1.72;color:#DCE1EC}
+.body p{margin:0 0 1.15em;max-width:66ch}
+.note{margin-top:30px;padding:18px 20px;border-radius:16px;font-size:14px;color:var(--ink-2)}
+.sources{margin-top:18px;padding:18px 20px;border-radius:16px}
+.sources ol{margin:8px 0 0;padding-left:20px;font-size:15px}
+.sources li{margin-bottom:6px;overflow-wrap:anywhere}
+.sources a{color:#B8C8FF;text-decoration-color:rgba(184,200,255,.4);text-underline-offset:3px}
+
+.state{padding:80px 0;text-align:center;color:var(--muted);font-family:var(--mono);font-size:13px;letter-spacing:.06em}
+footer{border-top:1px solid var(--line);padding-block:22px 36px;font-size:13px;color:var(--muted)}
+footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.fine{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;opacity:.8}
+
+/* images */
+.media{position:relative;overflow:hidden;background:#0d1426;aspect-ratio:16/9;max-width:100%}
+.media img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s ease}
+.card-link:hover .media img{transform:scale(1.03)}
+.ph{width:100%;height:100%;display:grid;place-items:center;background:
+  radial-gradient(60% 80% at 20% 20%,rgba(255,51,80,.35),transparent 70%),
+  radial-gradient(60% 80% at 85% 90%,rgba(79,123,255,.35),transparent 70%),#0d1426}
+.ph span{font-family:var(--display);font-weight:900;font-stretch:125%;text-transform:uppercase;letter-spacing:.06em;font-size:13px;color:rgba(255,255,255,.55)}
+.lead.has-img{padding:0;justify-content:flex-start}
+.lead.has-img .media{aspect-ratio:auto;height:clamp(220px,32vw,360px)}
+.lead.has-img .media::after{content:"";position:absolute;inset:auto 0 0 0;height:55%;background:linear-gradient(180deg,transparent,rgba(20,25,38,.96))}
+.lead .txt{position:relative;display:flex;flex-direction:column;gap:14px}
+.lead.has-img .txt{padding:clamp(20px,3vw,32px);margin-top:-70px;z-index:1}
+.stack .glass.row{flex-direction:row;align-items:center;gap:14px;padding:12px}
+.stack .thumb{flex:none;width:92px;height:92px;border-radius:12px;overflow:hidden;aspect-ratio:1}
+.stack .thumb .media{aspect-ratio:1;height:100%}
+.stack .row .t{display:flex;flex-direction:column;gap:8px;min-width:0}
+.grid .glass{padding:0;overflow:hidden}
+.grid .glass .t{padding:18px 20px 20px;display:flex;flex-direction:column;gap:10px}
+figure.hero-img{margin:0 0 26px;border-radius:18px;overflow:hidden;border:1px solid var(--line);box-shadow:0 0 50px rgba(79,123,255,.12)}
+figure.hero-img figcaption{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--muted);padding:9px 14px;background:rgba(255,255,255,.03);overflow-wrap:anywhere}
+figure.hero-img figcaption a{color:var(--ink-2)}
+
+/* about */
+.about{max-width:720px;margin:0 auto}
+.about h1{font-family:var(--display);font-weight:800;font-stretch:112%;font-size:clamp(34px,5.4vw,56px);line-height:1.03;letter-spacing:-.015em;margin:8px 0 18px;
+  background:linear-gradient(180deg,#fff 30%,#B9C3DA);-webkit-background-clip:text;background-clip:text;color:transparent}
+.about .lede{font-size:21px;color:var(--ink-2);line-height:1.5;margin:0 0 28px}
+.pillars{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:0 0 30px}
+.pillars .glass{padding:18px;border-radius:16px}
+.pillars h3{margin:0 0 6px;font-size:16px}
+.pillars p{margin:0;font-size:15px;color:var(--ink-2);line-height:1.5}
+.about h2{font-size:20px;margin:30px 0 10px}
+.about p,.about li{font-size:17px;line-height:1.7;color:#DCE1EC}
+.about ul{padding-left:20px}
+.head-about{font-size:13px;font-weight:600;color:var(--ink-2);text-decoration:none;padding:7px 12px;border-radius:999px;border:1px solid var(--line)}
+.head-about:hover,.head-about[aria-current="page"]{color:#fff;border-color:var(--line-hi);box-shadow:0 0 18px var(--blue-soft)}
+footer a{color:var(--ink-2)}
+
+@media (max-width:820px){
+  .hero{grid-template-columns:1fr}
+  nav{margin-left:0;width:100%;order:3}
+  .head-about{margin-left:auto;order:2}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="page">
+<header><div class="wrap">
+  <a class="logo" href="#home"><span class="mark" aria-hidden="true"><svg viewBox="0 0 16 16"><path fill="#fff" d="M1 15V4h3v2h2V4h4v2h2V4h3v11z"/></svg></span>The Rampart</a>
+  <nav aria-label="Sections" id="navs"></nav>
+  <a class="head-about" href="#about" id="aboutLink">About</a>
+</div></header>
+
+<div class="wrap"><div class="breaking" id="breaking" hidden><a href="#" id="brkLink"><span class="pill"><i></i>Breaking</span><span class="t" id="brkText"></span></a></div></div>
+
+<main><div class="wrap" id="view"><div class="state">Loading the wire…</div></div></main>
+
+<footer><div class="wrap">
+  <span>The Rampart · News from the home front. Every story links its sources. <a href="#about">About</a></span>
+  <span>Analysis pieces are labeled. <span class="fine">· AI driven</span></span>
+</div></footer>
+</div>
+
+<script>
+const SECTIONS=["All","Washington","Elections","Culture","World","Economy"];
+let articles=[]; let section="All";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt=iso=>{try{return new Date(iso).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}catch(e){return ""}};
+
+function renderNav(){
+  $("#navs").innerHTML=SECTIONS.map(s=>`<button type="button" data-s="${s}" aria-pressed="${s===section}">${s}</button>`).join("");
+  $("#navs").querySelectorAll("button").forEach(b=>b.onclick=()=>{section=b.dataset.s;if(location.hash&&location.hash!=="#home")location.hash="home";else render()});
+}
+const meta=a=>`<div class="meta"><span class="kicker${a.type==="analysis"?" analysis":""}">${esc(a.type==="analysis"?"Analysis · "+a.section:a.section)}</span><span>${esc(fmt(a.publishedAt))}</span></div>`;
+const link=(a,inner)=>`<a class="card-link" href="#${esc(a.id)}">${inner}</a>`;
+const media=a=>a.image&&a.image.src
+  ?`<div class="media"><img src="${esc(a.image.src)}" alt="${esc(a.image.alt||"")}" loading="lazy" decoding="async" onerror="this.parentNode.innerHTML='<div class=ph><span>${esc(a.section)}</span></div>'"></div>`
+  :`<div class="media"><div class="ph"><span>${esc(a.section)}</span></div></div>`;
+
+function renderFront(){
+  document.title="The Rampart · News from the home front";
+  const list=section==="All"?articles:articles.filter(a=>a.section===section);
+  if(!list.length){$("#view").innerHTML=`<div class="state">No ${esc(section)} stories yet. The next wire run will add them.</div>`;return}
+  const [lead,...rest]=list, side=rest.slice(0,3), more=rest.slice(3);
+  const leadImg=lead.image&&lead.image.src;
+  $("#view").innerHTML=`
+  <div class="hero">
+    ${link(lead,`<div class="glass lead${leadImg?" has-img":""}">${leadImg?media(lead):""}<div class="txt">${meta(lead)}<h2>${esc(lead.title)}</h2><p>${esc(lead.dek)}</p></div></div>`)}
+    <div class="stack"><h3 class="label">Latest</h3>${side.map(a=>link(a,`<div class="glass row"><div class="thumb">${media(a)}</div><div class="t">${meta(a)}<h4>${esc(a.title)}</h4></div></div>`)).join("")||`<p class="meta">More stories on the next run.</p>`}</div>
+  </div>
+  ${more.length?`<section class="more"><h3 class="label">More from the wire</h3><div class="grid">${more.map(a=>link(a,`<div class="glass">${media(a)}<div class="t">${meta(a)}<h4>${esc(a.title)}</h4><p>${esc(a.dek)}</p></div></div>`)).join("")}</div></section>`:""}`;
+}
+function figure(a){
+  const im=a.image; if(!im||!im.src)return "";
+  const credit=[im.credit&&("Photo: "+im.credit),im.license].filter(Boolean).join(" · ");
+  const cap=credit?(im.page?`<a href="${esc(im.page)}" target="_blank" rel="noopener">${esc(credit)}</a>`:esc(credit)):"";
+  return `<figure class="hero-img"><div class="media"><img src="${esc(im.src)}" alt="${esc(im.alt||"")}" decoding="async" onerror="this.closest('figure').remove()"></div>${cap?`<figcaption>${cap}</figcaption>`:""}</figure>`;
+}
+function renderArticle(a){
+  const paras=(Array.isArray(a.body)?a.body:String(a.body||"").split(/\n\n+/)).map(p=>`<p>${esc(p)}</p>`).join("");
+  const src=(a.sources||[]).map(s=>`<li><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title||s.url)}</a></li>`).join("");
+  $("#view").innerHTML=`<article>
+    <button class="back" type="button" id="back">← Front page</button>
+    ${meta(a)}
+    <h1>${esc(a.title)}</h1>
+    <p class="dek">${esc(a.dek)}</p>
+    ${figure(a)}
+    <div class="byline meta"><span>By The Rampart Wire</span><span>${esc(fmt(a.publishedAt))}</span></div>
+    <div class="body">${paras}</div>
+    ${src?`<div class="glass sources"><h3 class="label">Sources</h3><ol>${src}</ol></div>`:""}
+  </article>`;
+  $("#back").onclick=()=>{location.hash="home"};
+  window.scrollTo(0,0);
+  document.title=a.title+" · The Rampart";
+}
+function renderAbout(){
+  document.title="About · The Rampart";
+  $("#view").innerHTML=`<div class="about">
+    <button class="back" type="button" id="back">← Front page</button>
+    <div class="meta"><span class="kicker">About</span></div>
+    <h1>What The Rampart is</h1>
+    <p class="lede">The Rampart is a news site for Americans who believe the country should come first: its workers, its borders, its sovereignty and its culture. We cover what Washington does, what it means for you, and what the establishment would rather you didn't notice.</p>
+    <div class="pillars">
+      <div class="glass"><h3>Built on sources</h3><p>Every story links the reporting and documents it's built from, so you can check the originals yourself.</p></div>
+      <div class="glass"><h3>Opinion, labeled</h3><p>Straight news is news. Pieces with a point of view carry an Analysis label.</p></div>
+      <div class="glass"><h3>Updated all day</h3><p>New stories post several times a day across Washington, Elections, Culture, World and Economy.</p></div>
+    </div>
+    <h2>How it works</h2>
+    <p>The Rampart is AI driven. Stories are researched and drafted with AI from public reporting (wire services, major outlets and primary documents like government releases and court filings), then published with their sources attached.</p>
+    <h2>Our standards</h2>
+    <ul>
+      <li>Facts, figures and quotes come from the linked sources, and quotes are reproduced exactly.</li>
+      <li>Every analysis gives the strongest version of the opposing argument.</li>
+      <li>We go after policies, officials and institutions, never people for who they are.</li>
+      <li>Breaking stories change. When the facts move, check the originals.</li>
+    </ul>
+  </div>`;
+  $("#back").onclick=()=>{location.hash="home"};
+  window.scrollTo(0,0);
+}
+function render(){
+  renderNav();
+  const brk=articles.find(a=>a.breaking);
+  $("#breaking").hidden=!brk;
+  if(brk){$("#brkText").textContent=brk.title;$("#brkLink").href="#"+brk.id}
+  const id=location.hash.slice(1);
+  $("#aboutLink").toggleAttribute("aria-current",id==="about");
+  if(id==="about"){renderAbout();return}
+  const a=id&&id!=="home"&&articles.find(x=>x.id===id);
+  if(a)renderArticle(a); else if(!articles.length)$("#view").innerHTML=`<div class="state">No stories on the wire yet.</div>`; else renderFront();
+}
+window.addEventListener("hashchange",render);
+renderNav();
+
+(async()=>{
+  try{
+    const r=await fetch("articles.json?v="+Math.floor(Date.now()/60000),{cache:"no-store"});
+    if(!r.ok)throw new Error(r.status);
+    articles=(await r.json()).sort((a,b)=>String(b.publishedAt).localeCompare(String(a.publishedAt)));
+    render();
+  }catch(e){if(location.hash==="#about"){renderAbout();return}$("#view").innerHTML=`<div class="state">Couldn't load stories. Reload to try again.</div>`}
+})();
+</script>
+</body>
+</html>
