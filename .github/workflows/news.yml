@@ -1,0 +1,57 @@
+name: News wire
+
+on:
+  schedule:
+    - cron: "0 12,17,22 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: news-wire
+  cancel-in-progress: false
+
+jobs:
+  write:
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Write new articles
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RAMPART_MODEL: ${{ vars.RAMPART_MODEL }}
+        run: node scripts/write-articles.mjs
+      - name: Commit articles
+        run: |
+          git config user.name "rampart-wire"
+          git config user.email "rampart-wire@users.noreply.github.com"
+          git add articles.json
+          git diff --cached --quiet || git commit -m "Wire run $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push
+
+  deploy:
+    needs: write
+    if: always() && (needs.write.result == 'success' || needs.write.result == 'skipped')
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4
