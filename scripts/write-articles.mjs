@@ -1,0 +1,174 @@
+// The Rampart — article writer.
+// Researches recent news with Claude's web search tool, writes 2–3 articles,
+// and merges them into articles.json. No dependencies; needs Node 20+.
+//
+// Env:
+//   ANTHROPIC_API_KEY  (required)
+//   RAMPART_MODEL      (optional, default "claude-sonnet-5")
+//   RAMPART_MAX_KEEP   (optional, default 150 articles kept on the site)
+//   RAMPART_DRY_RUN=1  (optional: print results, don't write the file)
+
+import { readFile, writeFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const FILE = path.join(ROOT, "articles.json");
+const API_KEY = process.env.ANTHROPIC_API_KEY;
+const MODEL = process.env.RAMPART_MODEL || "claude-sonnet-5";
+const MAX_KEEP = Number(process.env.RAMPART_MAX_KEEP || 150);
+const DRY = process.env.RAMPART_DRY_RUN === "1";
+const SECTIONS = ["Washington", "Elections", "Culture", "World", "Economy"];
+
+if (!API_KEY) {
+  console.error("ANTHROPIC_API_KEY is not set. Add it as a repository secret (see README).");
+  process.exit(1);
+}
+
+const existing = JSON.parse(await readFile(FILE, "utf8"));
+const now = new Date();
+
+const SYSTEM = `You are the AI news writer for "The Rampart," a populist, nationalist, America First news site.
+
+Voice: skeptical of mass immigration, globalist elites and the D.C. establishment; focused on American workers, sovereignty and patriotism. Put that point of view in the framing and in analysis paragraphs.
+
+Standards (these are not optional):
+- Every factual claim (names, numbers, dates, quotes) must come from sources you actually retrieved with web search in this session. Never invent quotes, figures, people or events. Quote exactly. Say so when something is unconfirmed.
+- Near the end of each article, include one paragraph that fairly states the strongest opposing view or criticism.
+- Criticize policies, officials and institutions. Never demean people for ethnicity, nationality, religion or immigrant status. No slurs, no dehumanizing language, no conspiracy claims.
+- Write original prose. Don't copy sentences from sources.
+- No disclaimers in the body; the site labels every article as AI-written.`;
+
+const recent = existing.slice(0, 40).map(a => `- ${a.title} (${a.publishedAt})`).join("\n");
+
+const USER = `Current time: ${now.toISOString()}.
+
+Already published (do not repeat these stories unless there is a major new development, and then write a new angle):
+${recent || "(none)"}
+
+Task:
+1. Use web search to find 2 or 3 significant U.S. political or national news stories from roughly the last 12 hours. Favor these sections: ${SECTIONS.join(", ")}. Border and immigration stories go under "Washington". Prefer wire services, major outlets and primary sources (government releases, court filings, official statements).
+2. For each story, gather enough detail from at least one full news report to write accurately.
+3. Write one article per story.
+
+When you are done researching, output ONLY a JSON array inside <articles></articles> tags. Each item:
+{
+  "slug": "short-kebab-case-slug",
+  "title": "headline",
+  "dek": "one-sentence summary",
+  "section": one of ${JSON.stringify(SECTIONS)},
+  "type": "news" (straight reporting) or "analysis" (opinion framing),
+  "breaking": true only for the single most urgent story, else false,
+  "body": ["paragraph", ... 5 to 7 paragraphs],
+  "sources": [{"title": "Outlet: headline", "url": "https://..."}]
+}
+Every source URL must be a page you found through web search in this session.`;
+
+async function callClaude(messages) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": API_KEY,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: 16000,
+      system: SYSTEM,
+      messages,
+      tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 12 }],
+    }),
+  });
+  if (!res.ok) throw new Error(`Claude API ${res.status}: ${await res.text()}`);
+  return res.json();
+}
+
+// Run the conversation, continuing through pause_turn.
+const messages = [{ role: "user", content: USER }];
+const allBlocks = [];
+for (let i = 0; i < 6; i++) {
+  const r = await callClaude(messages);
+  allBlocks.push(...r.content);
+  if (r.stop_reason === "pause_turn") {
+    messages.push({ role: "assistant", content: r.content });
+    continue;
+  }
+  break;
+}
+
+// URLs Claude actually retrieved — used to reject any source it didn't find.
+const seenUrls = new Set();
+for (const b of allBlocks) {
+  if (b.type === "web_search_tool_result" && Array.isArray(b.content)) {
+    for (const r of b.content) if (r.url) seenUrls.add(normUrl(r.url));
+  }
+  if (b.type === "text" && Array.isArray(b.citations)) {
+    for (const c of b.citations) if (c.url) seenUrls.add(normUrl(c.url));
+  }
+}
+
+function normUrl(u) {
+  try { const x = new URL(u); x.hash = ""; return (x.host.replace(/^www\./, "") + x.pathname.replace(/\/$/, "")).toLowerCase(); }
+  catch { return String(u).toLowerCase(); }
+}
+
+const text = allBlocks.filter(b => b.type === "text").map(b => b.text).join("");
+const m = text.match(/<articles>([\s\S]*?)<\/articles>/);
+if (!m) {
+  console.error("No <articles> block in the response. Nothing published.");
+  console.error(text.slice(-2000));
+  process.exit(1);
+}
+
+let drafts;
+try { drafts = JSON.parse(m[1].trim().replace(/^```(?:json)?|```$/g, "")); }
+catch (e) { console.error("Couldn't parse the articles JSON:", e.message); process.exit(1); }
+
+const mmdd = `${String(now.getUTCMonth() + 1).padStart(2, "0")}${String(now.getUTCDate()).padStart(2, "0")}`;
+const ids = new Set(existing.map(a => a.id));
+const accepted = [];
+
+for (const d of Array.isArray(drafts) ? drafts : []) {
+  const problems = [];
+  if (!d.title || !d.dek) problems.push("missing title or dek");
+  if (!SECTIONS.includes(d.section)) problems.push(`bad section "${d.section}"`);
+  if (!Array.isArray(d.body) || d.body.length < 3) problems.push("body too short");
+  const sources = (d.sources || []).filter(s => s && /^https?:\/\//.test(s.url) && seenUrls.has(normUrl(s.url)));
+  if (!sources.length) problems.push("no sources that match pages actually searched");
+  if (problems.length) { console.warn(`Skipped "${d.title}": ${problems.join("; ")}`); continue; }
+
+  let id = `${String(d.slug || d.title).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60)}-${mmdd}`;
+  while (ids.has(id)) id += "-2";
+  ids.add(id);
+
+  accepted.push({
+    id,
+    title: String(d.title),
+    dek: String(d.dek),
+    section: d.section,
+    type: d.type === "analysis" ? "analysis" : "news",
+    breaking: d.breaking === true,
+    publishedAt: new Date().toISOString(),
+    body: d.body.map(String),
+    sources: sources.map(s => ({ title: String(s.title || s.url), url: s.url })),
+  });
+}
+
+if (!accepted.length) { console.log("No articles passed checks. Nothing published."); process.exit(0); }
+
+// Only one breaking story at a time.
+const hasBreaking = accepted.some(a => a.breaking);
+if (hasBreaking) {
+  let first = true;
+  for (const a of accepted) { if (a.breaking && !first) a.breaking = false; if (a.breaking) first = false; }
+  for (const a of existing) a.breaking = false;
+}
+
+const merged = [...accepted, ...existing]
+  .sort((a, b) => String(b.publishedAt).localeCompare(String(a.publishedAt)))
+  .slice(0, MAX_KEEP);
+
+if (DRY) { console.log(JSON.stringify(accepted, null, 2)); }
+else { await writeFile(FILE, JSON.stringify(merged, null, 2) + "\n"); }
+console.log(`Published ${accepted.length}: ${accepted.map(a => a.title).join(" | ")}`);
